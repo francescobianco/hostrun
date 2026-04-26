@@ -1,4 +1,16 @@
 
+hostrun_runner_build_inject() {
+  local host_line; host_line="$1"
+  local pair
+  local key
+  local val
+  for pair in $host_line; do
+    key="${pair%%=*}"
+    val="${pair#*=}"
+    printf 'declare hostrun_%s=%q\n' "$key" "$val"
+  done
+}
+
 hostrun_runner_exec() {
   local host_line; host_line="$1"
   local script_file; script_file="$2"
@@ -13,29 +25,22 @@ hostrun_runner_exec() {
     user="$USER"
   fi
 
+  local inject; inject=$(hostrun_runner_build_inject "$host_line")
+
   if [ "$host" = "0.0.0.0" ] || [ "$name" = "local" ]; then
-    if [ "$mode" = "command" ]; then
-      bash -c "$(cat "$script_file")"
-    else
-      bash "$script_file"
-    fi
+    { printf '%s\n' "$inject"; cat "$script_file"; } | bash -s
     return $?
   fi
 
   local ssh_opts; ssh_opts="-o StrictHostKeyChecking=no -o ConnectTimeout=10"
+  local tty_flag; tty_flag=""
+  [ "$mode" = "command" ] && tty_flag="-tt"
 
-  if [ "$mode" = "command" ]; then
-    local cmd; cmd=$(cat "$script_file")
-    if [ -n "$password" ]; then
-      sshpass -p "$password" ssh -tt $ssh_opts "${user}@${host}" "$cmd"
-    else
-      ssh -tt $ssh_opts "${user}@${host}" "$cmd"
-    fi
+  if [ -n "$password" ]; then
+    { printf '%s\n' "$inject"; cat "$script_file"; } | \
+      sshpass -p "$password" ssh $tty_flag $ssh_opts "${user}@${host}" 'bash -s'
   else
-    if [ -n "$password" ]; then
-      sshpass -p "$password" ssh $ssh_opts "${user}@${host}" 'bash -s' < "$script_file"
-    else
-      ssh $ssh_opts -o BatchMode=yes "${user}@${host}" 'bash -s' < "$script_file"
-    fi
+    { printf '%s\n' "$inject"; cat "$script_file"; } | \
+      ssh $tty_flag $ssh_opts "${user}@${host}" 'bash -s'
   fi
 }
