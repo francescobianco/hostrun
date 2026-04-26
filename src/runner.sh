@@ -2,6 +2,7 @@
 hostrun_runner_exec() {
   local host_line; host_line="$1"
   local script_file; script_file="$2"
+  local mode; mode="${3:-script}"
 
   local host; host=$(hostrun_hosts_get_field "$host_line" "host")
   local user; user=$(hostrun_hosts_get_field "$host_line" "user")
@@ -13,15 +14,28 @@ hostrun_runner_exec() {
   fi
 
   if [ "$host" = "0.0.0.0" ] || [ "$name" = "local" ]; then
-    bash "$script_file"
+    if [ "$mode" = "command" ]; then
+      bash -c "$(cat "$script_file")"
+    else
+      bash "$script_file"
+    fi
     return $?
   fi
 
   local ssh_opts; ssh_opts="-o StrictHostKeyChecking=no -o ConnectTimeout=10"
 
-  if [ -n "$password" ]; then
-    sshpass -p "$password" ssh $ssh_opts "${user}@${host}" 'bash -s' < "$script_file"
+  if [ "$mode" = "command" ]; then
+    local cmd; cmd=$(cat "$script_file")
+    if [ -n "$password" ]; then
+      sshpass -p "$password" ssh -tt $ssh_opts "${user}@${host}" "$cmd"
+    else
+      ssh -tt $ssh_opts "${user}@${host}" "$cmd"
+    fi
   else
-    ssh $ssh_opts -o BatchMode=yes "${user}@${host}" 'bash -s' < "$script_file"
+    if [ -n "$password" ]; then
+      sshpass -p "$password" ssh $ssh_opts "${user}@${host}" 'bash -s' < "$script_file"
+    else
+      ssh $ssh_opts -o BatchMode=yes "${user}@${host}" 'bash -s' < "$script_file"
+    fi
   fi
 }
