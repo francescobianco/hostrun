@@ -82,22 +82,12 @@ hostrun_runner_exec() {
   fi
 
   local ssh_opts; ssh_opts="-o StrictHostKeyChecking=no -o ConnectTimeout=10"
+  local payload
+  payload=$({ printf '%s\n' "$inject" "$env_inject"; cat "$script_file"; } | base64 -w0)
 
-  if [ "$mode" = "command" ]; then
-    local payload
-    payload=$({ printf '%s\n' "$inject" "$env_inject"; cat "$script_file"; } | base64 -w0)
-    if [ -n "$password" ]; then
-      sshpass -p "$password" ssh -tt $ssh_opts "${user}@${host}" "echo ${payload} | base64 -d | bash"
-    else
-      ssh -tt $ssh_opts "${user}@${host}" "echo ${payload} | base64 -d | bash"
-    fi
+  if [ -n "$password" ]; then
+    sshpass -p "$password" ssh -tt $ssh_opts "${user}@${host}" "echo ${payload} | base64 -d | bash"
   else
-    if [ -n "$password" ]; then
-      { printf '%s\n' "$inject" "$env_inject"; cat "$script_file"; } | \
-        sshpass -p "$password" ssh $ssh_opts "${user}@${host}" 'bash -s'
-    else
-      { printf '%s\n' "$inject" "$env_inject"; cat "$script_file"; } | \
-        ssh $ssh_opts "${user}@${host}" 'bash -s'
-    fi
+    ssh -tt $ssh_opts "${user}@${host}" "echo ${payload} | base64 -d | bash"
   fi
 }
