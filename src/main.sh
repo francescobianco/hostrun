@@ -2,6 +2,11 @@ module hosts
 module runner
 
 main() {
+  if [ "$1" = "--list" ]; then
+    hostrun_hosts_list
+    return $?
+  fi
+
   local host_name; host_name="$1"
   local script_file
   local tmp_script
