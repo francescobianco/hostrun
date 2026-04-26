@@ -25,10 +25,10 @@ cp target/release/hostrun /usr/local/bin/hostrun
 
 ```
 host=0.0.0.0        name=local
-host=192.168.144.44 name=orangepi   user=francesco password=Ciccio100
-host=192.168.144.7  name=jarvis
-host=74.208.245.19  name=proxy      user=root      password=S3cr3t!
-host=195.20.246.144 name=tools      user=root      password=S3cr3t!  client_id=42
+host=192.168.1.10   name=webserver  user=deploy    password=changeme
+host=192.168.1.20   name=dbserver
+host=203.0.113.5    name=vps        user=root      password=changeme
+host=203.0.113.6    name=vps2       user=root      password=changeme  client_id=42
 ```
 
 ### Reserved keys
@@ -49,7 +49,7 @@ The special host `name=local` (or `host=0.0.0.0`) runs scripts locally without S
 Any extra key on a host line is automatically available inside your scripts as `hostrun_<key>`:
 
 ```
-host=195.20.246.144 name=tools user=root password=S3cr3t! client_id=42 env=production
+host=203.0.113.6    name=vps2  user=root password=changeme client_id=42 env=production
 ```
 
 Inside `deploy.sh` running on that host:
