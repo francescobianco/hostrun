@@ -15,7 +15,15 @@ main() {
   if [ -z "$host_name" ]; then
     echo "Usage: hostrun <hostname> <script.sh>" >&2
     echo "       hostrun <hostname> -c \"command; command;\"" >&2
+    echo "       hostrun <hostname> --attach" >&2
     exit 1
+  fi
+
+  if [ "$2" = "--attach" ]; then
+    local host_line
+    host_line=$(hostrun_hosts_find "$host_name") || exit 1
+    hostrun_runner_attach "$host_line"
+    return $?
   fi
 
   if [ "$2" = "-c" ]; then

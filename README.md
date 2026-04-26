@@ -96,6 +96,9 @@ hostrun <hostname> <script.sh>
 # Run an inline command (allocates a PTY — interactive commands work)
 hostrun <hostname> -c "command; command;"
 
+# Open an interactive shell on a remote host
+hostrun <hostname> --attach
+
 # List all named hosts
 hostrun --list
 ```
@@ -104,17 +107,32 @@ hostrun --list
 
 ```bash
 # Run a provisioning script on a VPS
-hostrun proxy setup.sh
+hostrun vps setup.sh
 
-# Check disk usage interactively
-hostrun tools -c "df -h"
+# Check disk usage
+hostrun vps2 -c "df -h"
 
-# Run htop on a remote host
-hostrun orangepi -c "htop"
+# Run htop interactively
+hostrun vps2 -c "htop"
+
+# Open a shell on the server
+hostrun vps --attach
 
 # List all configured hosts
 hostrun --list
 ```
+
+### `-c` vs `--attach`
+
+| Feature                        | `-c "cmd"`   | `--attach` |
+|--------------------------------|--------------|------------|
+| PTY allocated                  | yes (`-tt`)  | yes (`-tt`)|
+| stdin                          | pipe         | terminal   |
+| interactive TUI (top, htop...) | yes          | yes        |
+| interactive shell (`bash`)     | no           | yes        |
+| host variables injected        | yes          | no         |
+
+Use `-c` to run a command or a TUI tool. Use `--attach` when you need a full interactive shell. Trying to run `bash` via `-c` will not work — stdin is a pipe and the shell exits immediately.
 
 ## How it works
 
