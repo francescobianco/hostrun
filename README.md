@@ -83,6 +83,32 @@ The standard keys (`host`, `name`, `user`, `password`) are injected too:
 
 Variables are declared via a `declare` header prepended to your script before it is piped to the remote bash process. No boilerplate required in your scripts.
 
+### Injecting local environment variables (`--env-file`)
+
+Pass a local `.env` file to make its variables available inside the remote script:
+
+```bash
+hostrun vps2 deploy.sh --env-file .env
+hostrun vps2 -c 'echo $APP_NAME' --env-file .env
+```
+
+The `.env` file uses the standard format — blank lines and `#` comments are ignored, quoted values are stripped of their quotes:
+
+```bash
+# .env
+APP_NAME=myapp
+DB_HOST=db.internal
+SECRET_KEY=abc123
+```
+
+Inside the remote script, variables are available exactly as declared in the `.env` file (no prefix):
+
+```bash
+echo "Deploying $APP_NAME to $hostrun_host using DB $DB_HOST"
+```
+
+Both `hostrun_*` variables (from the host line) and `.env` variables are available simultaneously.
+
 ### Limitation: no spaces in values
 
 Variable values **cannot contain spaces**. This is an intentional design constraint — the `.hosts` format is deliberately kept simple and parseable with basic tools. If your use case requires values with spaces or complex data structures, `hostrun` is not the right tool for that part of the job.
@@ -93,8 +119,14 @@ Variable values **cannot contain spaces**. This is an intentional design constra
 # Run a script file on a remote host
 hostrun <hostname> <script.sh>
 
+# Run a script and inject local environment variables
+hostrun <hostname> <script.sh> --env-file <file>
+
 # Run an inline command (allocates a PTY — interactive commands work)
 hostrun <hostname> -c "command; command;"
+
+# Run an inline command with env file
+hostrun <hostname> -c "command" --env-file <file>
 
 # Open an interactive shell on a remote host
 hostrun <hostname> --attach
@@ -109,11 +141,17 @@ hostrun --list
 # Run a provisioning script on a VPS
 hostrun vps setup.sh
 
+# Deploy passing secrets from a local .env
+hostrun vps2 deploy.sh --env-file .env
+
 # Check disk usage
 hostrun vps2 -c "df -h"
 
 # Run htop interactively
 hostrun vps2 -c "htop"
+
+# Inline command with env vars
+hostrun vps2 -c 'echo "deploying $APP_NAME to $hostrun_host"' --env-file .env
 
 # Open a shell on the server
 hostrun vps --attach
