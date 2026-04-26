@@ -31,6 +31,8 @@ host=203.0.113.5    name=vps        user=root      password=changeme
 host=203.0.113.6    name=vps2       user=root      password=changeme  client_id=42
 ```
 
+Lines without a `name=` key are ignored by `hostrun`.
+
 ### Reserved keys
 
 | Key        | Description                                              |
@@ -44,12 +46,23 @@ If `password` is absent, `hostrun` falls back to key-based authentication.
 
 The special host `name=local` (or `host=0.0.0.0`) runs scripts locally without SSH.
 
+### Multi-line entries
+
+Long host lines can be split across multiple lines using a trailing backslash:
+
+```
+host=203.0.113.6  name=vps2  user=root  password=changeme \
+  client_id=42    env=production        region=eu-west
+```
+
+The backslash must be the last character of the line (no trailing space). The continuation line is joined and parsed as a single entry.
+
 ### Custom keys and variable injection
 
 Any extra key on a host line is automatically available inside your scripts as `hostrun_<key>`:
 
 ```
-host=203.0.113.6    name=vps2  user=root password=changeme client_id=42 env=production
+host=203.0.113.6  name=vps2  user=root  password=changeme  client_id=42  env=production
 ```
 
 Inside `deploy.sh` running on that host:
@@ -62,13 +75,17 @@ The standard keys (`host`, `name`, `user`, `password`) are injected too:
 
 | Variable              | Value from example   |
 |-----------------------|----------------------|
-| `$hostrun_host`       | `195.20.246.144`     |
-| `$hostrun_name`       | `tools`              |
+| `$hostrun_host`       | `203.0.113.6`        |
+| `$hostrun_name`       | `vps2`               |
 | `$hostrun_user`       | `root`               |
 | `$hostrun_client_id`  | `42`                 |
 | `$hostrun_env`        | `production`         |
 
 Variables are declared via a `declare` header prepended to your script before it is piped to the remote bash process. No boilerplate required in your scripts.
+
+### Limitation: no spaces in values
+
+Variable values **cannot contain spaces**. This is an intentional design constraint — the `.hosts` format is deliberately kept simple and parseable with basic tools. If your use case requires values with spaces or complex data structures, `hostrun` is not the right tool for that part of the job.
 
 ## Usage
 

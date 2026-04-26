@@ -5,6 +5,11 @@ hostrun_hosts_get_field() {
   echo "$line" | grep -oP "(?<=${field}=)\S+" || true
 }
 
+hostrun_hosts_parse() {
+  local hosts_file; hosts_file="${HOME}/.hosts"
+  awk '/\\$/ { sub(/\\$/, ""); printf "%s", $0; next } 1' "$hosts_file"
+}
+
 hostrun_hosts_list() {
   local hosts_file; hosts_file="${HOME}/.hosts"
 
@@ -19,7 +24,7 @@ hostrun_hosts_list() {
     local host; host=$(hostrun_hosts_get_field "$line" "host")
     local user; user=$(hostrun_hosts_get_field "$line" "user")
     [ -n "$name" ] && printf "%-20s %s\n" "$name" "${user:+${user}@}${host}"
-  done < "$hosts_file"
+  done < <(hostrun_hosts_parse)
 }
 
 hostrun_hosts_find() {
@@ -38,7 +43,7 @@ hostrun_hosts_find() {
       echo "$line"
       return 0
     fi
-  done < "$hosts_file"
+  done < <(hostrun_hosts_parse)
 
   echo "hostrun: host not found: $name" >&2
   return 1
