@@ -2,7 +2,7 @@
 hostrun_hosts_get_field() {
   local line; line="$1"
   local field; field="$2"
-  echo "$line" | grep -oP "(?<=${field}=)\S+"
+  echo "$line" | grep -oP "(?<=${field}=)\S+" || true
 }
 
 hostrun_hosts_list() {
